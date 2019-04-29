@@ -18,7 +18,7 @@ set /a denom=%full%/%cnt%
 set /a current_progress=0
 
 SET    abet=abcdefghijklmnopqrstuvwxyz@#-/\ .0123456789
-SET cipher1=8p#j4 9z\6w.ae@0u2r5ofkx-c13bg7hmqil/tnsdvy
+SET cipher1=0123456789abcdefghijklmnopqrstuvwxyz@#-/\ .
 IF EXIST "mytextx.txt" (
 	ECHO Cyphering.
 	(
