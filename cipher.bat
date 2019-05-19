@@ -2,7 +2,7 @@
 mode con cols=102 lines=4
 setlocal EnableDelayedExpansion
 cls
-TITLE MD5 encryption
+TITLE MD5/Caesar
 
 @echo off & setlocal enabledelayedexpansion
 IF EXIST "mytextx.txt" (
