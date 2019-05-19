@@ -1,11 +1,221 @@
 @ECHO OFF
-mode con cols=102 lines=3
+mode con cols=102 lines=4
+setlocal EnableDelayedExpansion
+cls
+TITLE MD5 encryption
+
+@echo off & setlocal enabledelayedexpansion
+IF EXIST "mytextx.txt" (
+	for /f "tokens=*" %%c in (mytextx.txt) do (
+		set md5fromfile=%%c
+	)
+) ELSE IF EXIST "mytextx.encr" (
+	for /f "tokens=*" %%c in (mytextx.encr) do (
+		set md5fromfile=%%c
+	)
+) ELSE (
+	mode con cols=102 lines=5
+	ECHO No file exists.
+	ECHO Create a mytextx.txt file. Add password encrypted in MD5, in the last line.
+	ECHO Start using this encrypter/decrypter
+	TIMEOUT 10
+	GOTO :EOF
+)
+
+set enteredpass=
+:type_password
+SET/P enteredpass=Password:
+cls
+
+
+echo|set /p ans="%enteredpass%">"_md5.tmp"
+
+set "md5frompassword="
+for /f "skip=1 tokens=* delims=" %%# in ('certutil -hashfile "_md5.tmp" MD5') do (
+	if not defined md5frompassword (
+		for %%Z in (%%#) do set "md5frompassword=!md5frompassword!%%Z"
+	)
+)
+
+del "_md5.tmp"
+
+
+
+
+IF NOT "%md5fromfile%"=="%md5frompassword%" (
+	echo Wrong Password.
+	GOTO :type_password
+)
+cls
+echo MD5 Password ciphering: 10/100
+echo [##########------------------------------------------------------------------------------------------]
+echo Generating dictionary
+
+
+SET mystring=%enteredpass%%md5frompassword%
+SET finalstr=
+SET prevchar=
+SET /A repetition=0
+
+
+
+:loop
+SET char=%mystring:~0,1%
+SET mystring=%mystring:~1%
+SET combination=%char%%prevchar%%char%
+SET finalstr=%prevchar%s1t%prevchar%%finalstr%u2p%repetition%m3%combination%b4o%prevchar%%combination%e5n%tomultiply%f7t%char%t8w
+SET prevchar=%char%
+SET /A repetition=%repetition%+1
+IF NOT "%mystring%" == "" GOTO loop
+
+cls
+echo MD5 Password ciphering: 30/100
+echo [##############################----------------------------------------------------------------------]
+echo Populating array
+
+SET /A array_cell=0
+:populate_array
+SET arrayline[%array_cell%]=%finalstr:~0,8%
+SET finalstr=%finalstr:~7%
+SET /A array_cell=%array_cell%+1
+IF NOT "%finalstr%" == "" GOTO populate_array
+for /l %%n in (0,1,85) do ( 
+   (echo !arrayline[%%n]!)>>myarray
+)
+
+
+cls
+echo MD5 Password ciphering: 50/100
+echo [##################################################--------------------------------------------------]
+echo Sorting dictionary
+
+setlocal disableDelayedExpansion
+set "file=myarray"
+set "sorted=%file%.sorted"
+set "deduped=%file%.deduped"
+set LF=^
+
+
+::The 2 blank lines above are critical, do not remove
+sort "%file%" >"%sorted%"
+>"%deduped%" (
+  set "prev="
+  for /f usebackq^ eol^=^%LF%%LF%^ delims^= %%A in ("%sorted%") DO (
+    set "ln=%%A"
+    setlocal enableDelayedExpansion
+    if /i "!ln!" neq "!prev!" (
+      endlocal
+      (echo %%A)
+      set "prev=%%A"
+    ) else endlocal
+  )
+)
+cls
+echo MD5 Password ciphering: 70/100
+echo [######################################################################------------------------------]
+echo Cleaning dictionary
+
+
+>nul move /y "%deduped%" "%file%"
+del "%sorted%"
+SET dictionary=
+FOR /f "delims=" %%a IN (myarray) DO (
+	(echo | set /p dummyName=%%a)>>chr.tmp
+)
+FOR /f "delims=" %%a IN (chr.tmp) DO (
+	SET dictionary=%%a
+)
+cls
+echo MD5 Password ciphering: 85/100
+echo [#####################################################################################---------------]
+echo Finalizing dictionary
+
+
+set num=0
+SET revstr=%dictionary%
+SET rline=
+:reversal
+call set tmpa=%%revstr:~%num%,1%%%
+set /a num+=1
+if not "%tmpa%" equ "" (
+set rline=%tmpa%%rline%
+goto reversal
+)
+SET dictionary=%dictionary%%rline%
+
+
+
+setlocal EnableDelayedExpansion
+SET finalstr=%dictionary%
+SET /A array_cell=0
+:populate_my_array
+SET arrayline[%array_cell%]=%finalstr:~0,8%
+SET finalstr=%finalstr:~7%
+SET /A array_cell=%array_cell%+1
+IF NOT "%finalstr%" == "" GOTO populate_my_array
+for /l %%t in (0,1,85) do ( 
+   (echo !arrayline[%%t]!)>>mysecondarray
+)
+
+
+setlocal disableDelayedExpansion
+set "file=mysecondarray"
+set "sorted=%file%.sorted"
+set "deduped=%file%.deduped"
+set LF=^
+
+
+::The 2 blank lines above are critical, do not remove
+sort "%file%" >"%sorted%"
+>"%deduped%" (
+  set "prev="
+  for /f usebackq^ eol^=^%LF%%LF%^ delims^= %%A in ("%sorted%") DO (
+    set "ln=%%A"
+    setlocal enableDelayedExpansion
+    if /i "!ln!" neq "!prev!" (
+      endlocal
+      (echo %%A)
+      set "prev=%%A"
+    ) else endlocal
+  )
+)
+>nul move /y "%deduped%" "%file%"
+del "%sorted%"
+SET dictionary=
+FOR /f "delims=" %%a IN (mysecondarray) DO (
+	(echo | set /p dummyName=%%a)>>chr.tmp
+)
+FOR /f "delims=" %%a IN (chr.tmp) DO (
+	SET dictionary=%%a
+)
+
+cls
+echo MD5 Password ciphering finished: 100/100
+echo [####################################################################################################]
+
+del chr.tmp zero.tmp mysecondarray myarray
+
+
+
+
 IF EXIST "mytextx.txt" (
 	set set_file=mytextx.txt
 ) ELSE IF EXIST "mytextx.encr" (
 	set set_file=mytextx.encr
 )
 set tags=
+
+SetLocal DisableDelayedExpansion
+If Not Exist "%set_file%" Exit /B
+Copy /Y "%set_file%" "mytextx.tmp">Nul 2>&1||Exit /B
+(   Set "Line="
+    For /F "UseBackQ Delims=" %%A In ("mytextx.tmp") Do (
+        SetLocal EnableDelayedExpansion
+        If Defined Line Echo !Line!
+        EndLocal
+        Set "Line=%%A"))>"%set_file%"
+del mytextx.tmp
+EndLocal
 
 SETLOCAL EnableDelayedExpansion
 set /a cnt=0
@@ -15,37 +225,42 @@ for /l %%a in (1,1,%full%) do (
  CALL:ADDSPACE)
 set /a denom=%full%/%cnt%
 set /a current_progress=0
+set /a line_number=1
 
-SET myalphabet=ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz@#-/\ .0123456789
-SET dictionary=A 23456 B 23456 C 23456 D 23456 E 23456 F 23456 G 23456 H 23456 I 23456 J 23456 K 23456 L 23456 M 23456 N 23456 O 23456 P 23456 Q 23456 R 23456 S 23456 T 23456 U 23456 V 23456 W 23456 X 23456 Y 23456 Z 23456 a 23456 b 23456 c 23456 d 23456 e 23456 f 23456 g 23456 h 23456 i 23456 j 23456 k 23456 l 23456 m 23456 n 23456 o 23456 p 23456 q 23456 r 23456 s 23456 t 23456 u 23456 v 23456 w 23456 x 23456 y 23456 z 23456 @ 23456 # 23456 - 23456 / 23456 \ 23456   23456 . 23456 0 23456 1 23456 2 23456 3 23456 4 23456 5 23456 6 23456 7 23456 8 23456 9 23456 
+SET myalphabet=ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789@#-/\ .,?;:=-_+()[]{}
 IF EXIST "mytextx.txt" (
-	ECHO Cyphering.
+	ECHO Ciphering.
 	(
  		FOR /f "delims=" %%a IN (mytextx.txt) DO (
   			SET line=%%a
 			set /a current_progress=current_progress+%denom%
-			set set_title=Cyphering
+			set set_title=Ciphering
+			set /a line_number=line_number+1
   			CALL:PROGRESS
   			(CALL :encipher)>>mytextx.encr
  		)
 	)
-	ECHO Cyphering ended.
+	(ECHO %md5frompassword%)>>mytextx.encr
+	ECHO Ciphering ended.
 	DEL mytextx.txt
 ) ELSE IF EXIST "mytextx.encr" (
-	ECHO Decyphering.
+	ECHO Deciphering.
 	(
 		FOR /f "delims=" %%a IN (mytextx.encr) DO (
 			SET line=%%a
 			set /a current_progress=current_progress+%denom%
-			set set_title=Decyphering
+			set set_title=Deciphering
   			CALL:PROGRESS
+			set /a line_number=line_number+1
 			(CALL :decipher)>>mytextx.txt
 		)
 	)
-	ECHO Decyphering ended.
+	(ECHO %md5frompassword%)>>mytextx.txt
+	ECHO Deciphering ended.
 	DEL mytextx.encr
 ) ELSE (
-	ECHO No relative file exists.
+	(ECHO. Enter contents for encryption here.)>>mytextx.txt
+	ECHO No relative file exists. File mytextx.txt created.
 	TIMEOUT 5
 )
 DEL _temp.bat
@@ -101,6 +316,7 @@ set /a pct=full-%current_progress%
  (TITLE %set_title%
   echo/echo/%set_title%: %current_progress%/100
   echo/echo [%%tags:~0,%current_progress%%%%%fullBar:~0,%pct%%%]
+  echo/echo/Line: %line_number%
  )>_temp.bat
  cls
  call _temp.bat
